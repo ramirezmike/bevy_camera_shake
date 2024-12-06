@@ -47,7 +47,7 @@ struct Player;
 
 fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     // Create a default camera.
-    let camera_id = commands.spawn(Camera2dBundle::default()).id();
+    let camera_id = commands.spawn(Camera2d::default()).id();
     // Create a Shake2d entity.
     // We set decay to a lower value of 0.7. That means after 1 second, only `1.0 - 0.7` or 30% of the trauma will remain.
     // After two seconds, we will have no trauma left because `(1.0 - (2.0 * 0.7)) < 0.0`.
@@ -64,35 +64,33 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
                 Box::new(MyNoise::new(2)),
             ],
         })
-        .insert(SpatialBundle::default())
+        .insert((Transform::default(), Visibility::default()))
         .id();
 
     // Create the player entity.
     let player_id = commands
-        .spawn(SpriteBundle {
-            texture: asset_server.load("duck.png"),
-            transform: Transform::from_xyz(0., 0., 0.),
-            ..default()
-        })
-        .insert(Player)
+        .spawn((
+            Player,
+            Sprite::from_image(asset_server.load("duck.png")),
+            Transform::from_xyz(0., 0., 0.),
+        ))
         .id();
 
     // Spawn 5,000 ducks (to see the effects of shaking).
     for _ in 0..5000 {
-        commands.spawn(SpriteBundle {
-            texture: asset_server.load("duck.png"),
-            transform: Transform {
+        commands.spawn((
+            Sprite::from_image(asset_server.load("duck.png")),
+            Transform {
                 translation: Vec3::new((random_number()) * 2000.0, (random_number()) * 1000.0, 0.0),
                 rotation: Quat::default(),
                 scale: Vec3::new(0.3, 0.3, 1.0),
             },
-            ..default()
-        });
+        ));
     }
     // Make the player the parent of the Shake2d entity.
-    commands.entity(player_id).push_children(&[shake_id]);
+    commands.entity(player_id).add_children(&[shake_id]);
     // Make the Shake2d entity the parent of the camera (so the camera moves when the Shake2d component shakes).
-    commands.entity(shake_id).push_children(&[camera_id]);
+    commands.entity(shake_id).add_children(&[camera_id]);
     println!("Press R to add trauma to the camera.");
 }
 
@@ -118,8 +116,8 @@ fn player_movement(
     }
 
     for (mut t, _) in player_position.iter_mut() {
-        t.translation.x += velocity.x * time.delta_seconds() * speed;
-        t.translation.y += velocity.y * time.delta_seconds() * speed;
+        t.translation.x += velocity.x * time.delta_secs() * speed;
+        t.translation.y += velocity.y * time.delta_secs() * speed;
     }
 }
 
